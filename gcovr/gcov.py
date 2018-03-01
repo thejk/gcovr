@@ -14,6 +14,7 @@ import sys
 from os.path import normpath
 
 from .coverage import CoverageData
+from .ignore import ignore_file
 from .utils import aliases, search_file, Logger
 
 output_re = re.compile("[Cc]reating [`'](.*)'$")
@@ -108,6 +109,13 @@ def process_gcov_data(data_fname, covdata, source_fname, options):
         return
 
     if excluded:
+        logger.verbose_msg("  Excluding coverage data for file {0}", fname)
+        return
+
+    #
+    # Check for ignore files
+    #
+    if ignore_file(fname, options):
         logger.verbose_msg("  Excluding coverage data for file {0}", fname)
         return
 

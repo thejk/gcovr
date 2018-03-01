@@ -274,6 +274,7 @@ not for your libraries. This is influenced by the following options:
 -   ``--gcov-exclude``
 -   ``--exclude-directories``
 -   (the current working directory where gcovr is invoked)
+-   (``.gcovrignore`` files found in source paths)
 
 These options take filters.
 A filter is a regular expression that matches a file path.
@@ -292,6 +293,11 @@ The ``--gcov-filter`` and ``--gcov-exclude`` filters apply to the ``.gcov`` file
 This is useful mostly when running gcov yourself,
 and then invoking gcovr with ``-g``/``--use-gcov-files``.
 But these filters also apply when gcov is launched by gcovr.
+
+When source file is search for, every directory relative ``--root`` is checked
+for the existence of a ``.gcovrignore`` file, if one is found it is read as
+a list of ``--exclude`` rules relative the directory of the ``.gcovrignore``
+file.
 
 .. note::
     The filters will be matched as a regex against an absolute path.
