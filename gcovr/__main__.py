@@ -83,11 +83,36 @@ def check_percentage(value):
     return x
 
 
+def get_possible_config_file(options):
+    if options.config:
+        return options.config
+    config = os.path.join(options.root, 'gcovr.conf')
+    if os.path.exists(config):
+        return config
+    if options.root != '.':
+        config = 'gcovr.conf'
+        if os.path.exists(config):
+            return config
+    return None
+
+
+class ArgumentParserWithFancyArgFileParser(ArgumentParser):
+    def convert_arg_line_to_args(self, arg_line):
+        line = arg_line.strip()
+        if not line or line[0] == '#':
+            return []
+        try:
+            index = line.index('=')
+            return ['--' + line[:index].strip(), line[index+1:].strip()]
+        except ValueError:
+            return ['--' + line]
+
+
 def parse_arguments(args):
     """
     Create and parse arguments.
     """
-    parser = ArgumentParser(add_help=False)
+    parser = ArgumentParserWithFancyArgFileParser(add_help=False)
     parser.usage = "gcovr [options] [search_paths...]"
     parser.description = \
         "A utility to run gcov and summarize the coverage in simple reports."
@@ -129,6 +154,14 @@ def parse_arguments(args):
         action="store",
         dest="root",
         default='.'
+    )
+    options.add_argument(
+        '--config',
+        help="Config file to read options from. "
+             "Defaults to searching for a file named gcovr.conf in "
+             "root directory for source files (--root) and current directory. ",
+        action='store',
+        default=None
     )
     options.add_argument(
         'search_paths',
@@ -391,7 +424,20 @@ def parse_arguments(args):
         dest="gcov_parallel",
         default=1
     )
-    return parser.parse_args(args=args)
+    options = parser.parse_args(args=args)
+
+    configfile = get_possible_config_file(options)
+    if configfile:
+        # Parse the arguments again, but now with configfile as an argument
+        # file first
+        if options.verbose:
+            Logger(True).verbose_msg(
+                "Loading default arguments from {0}", configfile)
+        parser.fromfile_prefix_chars = ['@']
+        new_args = ['@' + configfile] + (args if args else sys.argv[1:])
+        options = parser.parse_args(args=new_args)
+
+    return options
 
 
 COPYRIGHT = (
